@@ -5,22 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mis Ventas</title>
   <style>
-    /* Reset básico */
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
     body {
       background: #f5f7fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       padding: 30px;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-      color: #333;
     }
 
     .container {
@@ -29,7 +19,7 @@
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
     }
 
     h2 {
@@ -101,6 +91,34 @@
       background-color: #d6eaf8;
     }
 
+    .resumen {
+      margin-top: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .resumen-card {
+      background-color: #3498db;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 10px;
+      min-width: 150px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .resumen-card h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .resumen-card p {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
     @media (max-width: 600px) {
       .input-group {
         flex-direction: column;
@@ -108,6 +126,10 @@
 
       input[type="text"], button {
         width: 100%;
+      }
+
+      .resumen-card {
+        min-width: 100%;
       }
     }
   </style>
@@ -122,17 +144,21 @@
     <button onclick="consultarVentas()">Consultar</button>
   </div>
 
+  <!-- Tabla de ventas -->
   <table>
     <thead>
       <tr>
         <th>Cliente</th>
         <th>Producto</th>
-        <th>Valor</th>
+        <th>Estado</th>
         <th>Fecha</th>
       </tr>
     </thead>
     <tbody id="tablaVentas"></tbody>
   </table>
+
+  <!-- Resumen -->
+  <div class="resumen" id="resumenVentas"></div>
 </div>
 
 <script>
@@ -145,15 +171,18 @@ async function consultarVentas() {
     if (!res.ok) throw new Error("Error en la consulta");
 
     const data = await res.json();
-
     const tabla = document.getElementById("tablaVentas");
+    const resumenDiv = document.getElementById("resumenVentas");
+
     tabla.innerHTML = "";
+    resumenDiv.innerHTML = "";
 
     if (data.length === 0) {
       tabla.innerHTML = `<tr><td colspan="4" style="text-align:center;">No se encontraron ventas</td></tr>`;
       return;
     }
 
+    // Llenar tabla
     data.forEach(v => {
       tabla.innerHTML += `
         <tr>
@@ -164,6 +193,35 @@ async function consultarVentas() {
         </tr>
       `;
     });
+
+    // Generar resumen por producto y estado
+    const resumen = {};
+    let totalVentas = 0;
+
+    data.forEach(v => {
+      totalVentas++;
+      const key = `${v.producto} - ${v.valor}`;
+      resumen[key] = (resumen[key] || 0) + 1;
+    });
+
+    // Mostrar resumen
+    Object.keys(resumen).forEach(key => {
+      resumenDiv.innerHTML += `
+        <div class="resumen-card">
+          <h3>${key}</h3>
+          <p>${resumen[key]}</p>
+        </div>
+      `;
+    });
+
+    // Total general
+    resumenDiv.innerHTML += `
+      <div class="resumen-card" style="background-color:#2ecc71;">
+        <h3>Total Ventas</h3>
+        <p>${totalVentas}</p>
+      </div>
+    `;
+
   } catch (err) {
     alert("Ocurrió un error al consultar las ventas");
     console.error(err);
