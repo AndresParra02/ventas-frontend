@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login Ventas</title>
+  <title>Mis Ventas</title>
 </head>
 <body>
 
-<h2>Login Asesor</h2>
+<h2>Consulta de Ventas</h2>
 
-<input type="text" id="cedula" placeholder="Cédula">
+<input type="text" id="cedula" placeholder="Ingrese su cédula">
+<button onclick="consultarVentas()">Consultar</button>
+
 <br><br>
 
-<input type="password" id="password" placeholder="Contraseña">
-<br><br>
-
-<button onclick="login()">Ingresar</button>
-
-<p id="resultado"></p>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Cliente</th>
+      <th>Producto</th>
+      <th>Valor</th>
+      <th>Fecha</th>
+    </tr>
+  </thead>
+  <tbody id="tablaVentas"></tbody>
+</table>
 
 <script>
-async function login() {
+async function consultarVentas() {
   const cedula = document.getElementById("cedula").value;
-  const password = document.getElementById("password").value;
 
-  const res = await fetch("http://localhost:3000/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ cedula, password })
-  });
+  const res = await fetch(
+    `http://localhost:3000/ventas/${cedula}`
+  );
 
   const data = await res.json();
 
-  if(res.ok){
-    document.getElementById("resultado").innerText =
-      "Bienvenido " + data.nombre + " (" + data.rol + ")";
-  } else {
-    document.getElementById("resultado").innerText =
-      data.message;
-  }
+  const tabla = document.getElementById("tablaVentas");
+  tabla.innerHTML = "";
+
+  data.forEach(v => {
+    tabla.innerHTML += `
+      <tr>
+        <td>${v.cliente}</td>
+        <td>${v.producto}</td>
+        <td>${v.valor}</td>
+        <td>${new Date(v.fecha).toLocaleDateString()}</td>
+      </tr>
+    `;
+  });
 }
 </script>
 
