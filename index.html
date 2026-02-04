@@ -29,7 +29,9 @@ async function consultarVentas() {
   const cedula = document.getElementById("cedula").value;
 
   const res = await fetch(
-    `http://localhost:3000/ventas/${cedula}`
+    `https://ventas-backend-loic.onrender.com/ventas/${cedula}`
+
+    
   );
 
   const data = await res.json();
