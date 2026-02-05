@@ -33,12 +33,12 @@
     .input-group {
       display: flex;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       gap: 10px;
       flex-wrap: wrap;
     }
 
-    input, select {
+    input {
       padding: 10px 15px;
       border-radius: 6px;
       border: 1px solid #ccc;
@@ -59,32 +59,56 @@
       background-color: #2980b9;
     }
 
+    /* ===== RESUMEN ===== */
+
     .resumen {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
       justify-content: center;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
 
     .resumen-card {
-      background-color: #3498db;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 10px;
-      min-width: 160px;
+      padding: 18px 25px;
+      border-radius: 12px;
+      min-width: 170px;
       text-align: center;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+
+    .resumen-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+    }
+
+    .resumen-card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .resumen-card p {
+      margin: 5px 0 0;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .card-activada { background: #2ecc71; }
+    .card-pendiente { background: #f1c40f; }
+    .card-cancelada { background: #e74c3c; }
+    .card-total { background: #3498db; }
+
+    /* ===== TABLA ===== */
 
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
       min-width: 1100px;
     }
 
     th, td {
-      text-align: left;
       padding: 10px 12px;
       border-bottom: 1px solid #ddd;
       font-size: 14px;
@@ -101,25 +125,10 @@
       background-color: #f2f2f2;
     }
 
-    tr:hover {
-      background-color: #d6eaf8;
-    }
-
-    /* COLORES POR ESTADO */
-    .estado-activada {
-      background-color: #2ecc71 !important;
-      color: white;
-    }
-
-    .estado-pendiente {
-      background-color: #f1c40f !important;
-      color: white;
-    }
-
-    .estado-cancelada {
-      background-color: #e74c3c !important;
-      color: white;
-    }
+    /* COLORES FILA POR ESTADO */
+    .estado-activada { background-color: #d5f5e3; }
+    .estado-pendiente { background-color: #fcf3cf; }
+    .estado-cancelada { background-color: #fadbd8; }
 
     @media (max-width: 768px) {
       .input-group {
@@ -136,18 +145,10 @@
 
   <div class="input-group">
     <input type="text" id="cedula_asesor" placeholder="Ingrese cédula del asesor">
-    
-    <select id="filtroEstado">
-      <option value="">Todos los estados</option>
-      <option value="activada">Activada</option>
-      <option value="pendiente">Pendiente</option>
-      <option value="cancelada">Cancelada</option>
-    </select>
-
     <button onclick="consultarVentas()">Consultar</button>
   </div>
 
-  <!-- RESUMEN -->
+  <!-- RESUMEN CLICKABLE -->
   <div class="resumen" id="resumenVentas"></div>
 
   <!-- TABLA -->
@@ -172,26 +173,30 @@
 <script>
 let ventasGlobal = [];
 
+function normalizarEstado(estado) {
+  return estado.toLowerCase().trim().replace(/\s+/g, '');
+}
+
 async function consultarVentas() {
-  const cedula_asesor = document.getElementById("cedula_asesor").value.trim();
-  if (!cedula_asesor) {
+  const cedula = document.getElementById("cedula_asesor").value.trim();
+  if (!cedula) {
     alert("Ingrese una cédula");
     return;
   }
 
   try {
-    const url = `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Error en la respuesta");
+    const res = await fetch(
+      `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula}`
+    );
+    if (!res.ok) throw new Error("Error API");
 
-    const data = await res.json();
-    ventasGlobal = data;
+    ventasGlobal = await res.json();
 
-    renderResumen(data);
-    renderTabla(data);
+    renderResumen(ventasGlobal);
+    renderTabla(ventasGlobal);
 
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
+    console.error(e);
     alert("Error al consultar ventas");
   }
 }
@@ -200,22 +205,30 @@ function renderResumen(data) {
   const resumenDiv = document.getElementById("resumenVentas");
   resumenDiv.innerHTML = "";
 
-  const resumen = {};
-  data.forEach(v => {
-    resumen[v.estado_venta] = (resumen[v.estado_venta] || 0) + 1;
-  });
+  const conteo = { activada: 0, pendiente: 0, cancelada: 0 };
 
-  Object.entries(resumen).forEach(([estado, cantidad]) => {
-    resumenDiv.innerHTML += `
-      <div class="resumen-card">
-        <h3>${estado}</h3>
-        <p>${cantidad}</p>
-      </div>
-    `;
+  data.forEach(v => {
+    const estado = normalizarEstado(v.estado_venta);
+    if (conteo[estado] !== undefined) conteo[estado]++;
   });
 
   resumenDiv.innerHTML += `
-    <div class="resumen-card" style="background:#2ecc71">
+    <div class="resumen-card card-activada" onclick="filtrarPorEstado('activada')">
+      <h3>Activadas</h3>
+      <p>${conteo.activada}</p>
+    </div>
+
+    <div class="resumen-card card-pendiente" onclick="filtrarPorEstado('pendiente')">
+      <h3>Pendientes</h3>
+      <p>${conteo.pendiente}</p>
+    </div>
+
+    <div class="resumen-card card-cancelada" onclick="filtrarPorEstado('cancelada')">
+      <h3>Canceladas</h3>
+      <p>${conteo.cancelada}</p>
+    </div>
+
+    <div class="resumen-card card-total" onclick="filtrarPorEstado('')">
       <h3>Total Ventas</h3>
       <p>${data.length}</p>
     </div>
@@ -236,14 +249,11 @@ function renderTabla(data) {
     return;
   }
 
-  let filas = "";
   data.forEach(v => {
-    const estadoClase = v.estado_venta
-      .toLowerCase()
-      .replace(/\s+/g, '');
+    const estado = normalizarEstado(v.estado_venta);
 
-    filas += `
-      <tr class="estado-${estadoClase}">
+    tabla.innerHTML += `
+      <tr class="estado-${estado}">
         <td>${v.cedula_asesor}</td>
         <td>${v.nombre_asesor}</td>
         <td>${v.rut}</td>
@@ -256,26 +266,20 @@ function renderTabla(data) {
       </tr>
     `;
   });
-
-  tabla.innerHTML = filas;
 }
 
-document.getElementById("filtroEstado").addEventListener("change", () => {
-  const estado = document.getElementById("filtroEstado").value;
-
+function filtrarPorEstado(estado) {
   if (!estado) {
     renderTabla(ventasGlobal);
-    renderResumen(ventasGlobal);
     return;
   }
 
   const filtradas = ventasGlobal.filter(v =>
-    v.estado_venta.toLowerCase().includes(estado)
+    normalizarEstado(v.estado_venta) === estado
   );
 
   renderTabla(filtradas);
-  renderResumen(filtradas);
-});
+}
 </script>
 
 </body>
