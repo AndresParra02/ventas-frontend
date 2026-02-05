@@ -105,6 +105,11 @@
       background-color: #d6eaf8;
     }
 
+    /* Colores por estado */
+    .estado-Activada { background-color: #2ecc71; color: white; }
+    .estado-Pendiente { background-color: #f1c40f; color: white; }
+    .estado-Cancelada { background-color: #e74c3c; color: white; }
+
     @media (max-width: 768px) {
       .input-group {
         flex-direction: column;
@@ -204,11 +209,11 @@ async function consultarVentas() {
       </div>
     `;
 
-    // Construir filas de la tabla
+    // Construir filas de la tabla con colores por estado
     let filas = "";
     data.forEach(v => {
       filas += `
-        <tr>
+        <tr class="estado-${v.estado_venta.replace(/\s+/g,'')}">
           <td>${v.cedula_asesor}</td>
           <td>${v.nombre_asesor}</td>
           <td>${v.rut}</td>
