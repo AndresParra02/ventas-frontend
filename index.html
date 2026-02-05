@@ -144,17 +144,19 @@
   <!-- RESUMEN -->
   <div class="resumen" id="resumenVentas"></div>
 </div>
-
 <script>
 async function consultarVentas() {
-  const cedula = document.getElementById("cedula").value.trim();
-  if (!cedula) {
+  const cedula_asesor = document.getElementById("cedula_asesor").value.trim();
+  if (!cedula_asesor) {
     alert("Ingrese una cédula");
     return;
   }
 
   try {
-    const res = await fetch(`https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`);
+    const res = await fetch(
+      `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`
+    );
+
     if (!res.ok) throw new Error("Error en la consulta");
 
     const data = await res.json();
@@ -174,37 +176,34 @@ async function consultarVentas() {
       return;
     }
 
-    // Cargar tabla
+    let filas = "";
     data.forEach(v => {
-      tabla.innerHTML += `
+      filas += `
         <tr>
           <td>${v.cedula_asesor}</td>
           <td>${v.nombre_asesor}</td>
           <td>${v.rut}</td>
           <td>${v.nombre_cliente}</td>
           <td>${v.estado_venta}</td>
-          <td>${new Date(v.fecha_venta).toLocaleDateString()}</td>
-          <td>${v.fecha_activacion ? new Date(v.fecha_activacion).toLocaleDateString() : '-'}</td>
+          <td>${v.fecha_venta || '-'}</td>
+          <td>${v.fecha_activacion || '-'}</td>
           <td>${v.tel_contacto}</td>
           <td>${v.tipo_venta}</td>
         </tr>
       `;
     });
+    tabla.innerHTML = filas;
 
-    // Resumen por estado
     const resumen = {};
-    let total = 0;
-
     data.forEach(v => {
-      total++;
       resumen[v.estado_venta] = (resumen[v.estado_venta] || 0) + 1;
     });
 
-    Object.keys(resumen).forEach(estado => {
+    Object.entries(resumen).forEach(([estado, cantidad]) => {
       resumenDiv.innerHTML += `
         <div class="resumen-card">
           <h3>${estado}</h3>
-          <p>${resumen[estado]}</p>
+          <p>${cantidad}</p>
         </div>
       `;
     });
@@ -212,16 +211,16 @@ async function consultarVentas() {
     resumenDiv.innerHTML += `
       <div class="resumen-card" style="background:#2ecc71">
         <h3>Total Ventas</h3>
-        <p>${total}</p>
+        <p>${data.length}</p>
       </div>
     `;
-
   } catch (error) {
     alert("Error al consultar ventas");
     console.error(error);
   }
 }
 </script>
+
 
 </body>
 </html>
