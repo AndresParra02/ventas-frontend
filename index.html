@@ -144,6 +144,7 @@
   <!-- RESUMEN -->
   <div class="resumen" id="resumenVentas"></div>
 </div>
+  
 <script>
 async function consultarVentas() {
   const cedula_asesor = document.getElementById("cedula_asesor").value.trim();
@@ -153,13 +154,19 @@ async function consultarVentas() {
   }
 
   try {
-    const res = await fetch(
-      `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`
-    );
+    const url = `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`;
+    console.log("Consultando:", url);
 
-    if (!res.ok) throw new Error("Error en la consulta");
+    const res = await fetch(url);
+    console.log("Status HTTP:", res.status);
+
+    if (!res.ok) {
+      throw new Error("Respuesta no OK");
+    }
 
     const data = await res.json();
+    console.log("Data:", data);
+
     const tabla = document.getElementById("tablaVentas");
     const resumenDiv = document.getElementById("resumenVentas");
 
@@ -215,12 +222,13 @@ async function consultarVentas() {
       </div>
     `;
   } catch (error) {
+    console.error("ERROR FRONTEND:", error);
     alert("Error al consultar ventas");
-    console.error(error);
   }
 }
 </script>
 
+  
 
 </body>
 </html>
