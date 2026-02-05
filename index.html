@@ -86,19 +86,19 @@
 
     .resumen-card h3 {
       margin: 0;
-      font-size: 16px;
+      font-size: 15px;
+      text-transform: capitalize;
     }
 
     .resumen-card p {
-      margin: 5px 0 0;
+      margin: 6px 0 0;
       font-size: 22px;
       font-weight: bold;
     }
 
-    .card-activada { background: #2ecc71; }
-    .card-pendiente { background: #f1c40f; }
-    .card-cancelada { background: #e74c3c; }
-    .card-total { background: #3498db; }
+    .card-total {
+      background: #34495e;
+    }
 
     /* ===== TABLA ===== */
 
@@ -125,10 +125,10 @@
       background-color: #f2f2f2;
     }
 
-    /* COLORES FILA POR ESTADO */
-    .estado-activada { background-color: #d5f5e3; }
-    .estado-pendiente { background-color: #fcf3cf; }
-    .estado-cancelada { background-color: #fadbd8; }
+    /* Color suave por fila (genérico) */
+    tr[data-estado] {
+      background-color: #f8f9f9;
+    }
 
     @media (max-width: 768px) {
       .input-group {
@@ -148,7 +148,7 @@
     <button onclick="consultarVentas()">Consultar</button>
   </div>
 
-  <!-- RESUMEN CLICKABLE -->
+  <!-- RESUMEN DINÁMICO -->
   <div class="resumen" id="resumenVentas"></div>
 
   <!-- TABLA -->
@@ -173,62 +173,56 @@
 <script>
 let ventasGlobal = [];
 
-function normalizarEstado(estado) {
-  return estado.toLowerCase().trim().replace(/\s+/g, '');
-}
+/* Paleta de colores para estados dinámicos */
+const colores = [
+  "#1abc9c", "#3498db", "#9b59b6", "#e67e22",
+  "#e74c3c", "#2ecc71", "#f1c40f", "#34495e"
+];
 
-async function consultarVentas() {
+function consultarVentas() {
   const cedula = document.getElementById("cedula_asesor").value.trim();
   if (!cedula) {
     alert("Ingrese una cédula");
     return;
   }
 
-  try {
-    const res = await fetch(
-      `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula}`
-    );
-    if (!res.ok) throw new Error("Error API");
-
-    ventasGlobal = await res.json();
-
-    renderResumen(ventasGlobal);
-    renderTabla(ventasGlobal);
-
-  } catch (e) {
-    console.error(e);
-    alert("Error al consultar ventas");
-  }
+  fetch(`https://ventas-backend-loic.onrender.com/ventas_movil/${cedula}`)
+    .then(res => res.json())
+    .then(data => {
+      ventasGlobal = data;
+      renderResumen(data);
+      renderTabla(data);
+    })
+    .catch(() => alert("Error al consultar ventas"));
 }
 
 function renderResumen(data) {
   const resumenDiv = document.getElementById("resumenVentas");
   resumenDiv.innerHTML = "";
 
-  const conteo = { activada: 0, pendiente: 0, cancelada: 0 };
-
+  const conteo = {};
   data.forEach(v => {
-    const estado = normalizarEstado(v.estado_venta);
-    if (conteo[estado] !== undefined) conteo[estado]++;
+    conteo[v.estado_venta] = (conteo[v.estado_venta] || 0) + 1;
+  });
+
+  let colorIndex = 0;
+
+  Object.entries(conteo).forEach(([estado, cantidad]) => {
+    const color = colores[colorIndex % colores.length];
+    colorIndex++;
+
+    resumenDiv.innerHTML += `
+      <div class="resumen-card"
+           style="background:${color}"
+           onclick="filtrarEstado('${estado.replace(/'/g, "\\'")}')">
+        <h3>${estado}</h3>
+        <p>${cantidad}</p>
+      </div>
+    `;
   });
 
   resumenDiv.innerHTML += `
-    <div class="resumen-card card-activada" onclick="filtrarPorEstado('activada')">
-      <h3>Activadas</h3>
-      <p>${conteo.activada}</p>
-    </div>
-
-    <div class="resumen-card card-pendiente" onclick="filtrarPorEstado('pendiente')">
-      <h3>Pendientes</h3>
-      <p>${conteo.pendiente}</p>
-    </div>
-
-    <div class="resumen-card card-cancelada" onclick="filtrarPorEstado('cancelada')">
-      <h3>Canceladas</h3>
-      <p>${conteo.cancelada}</p>
-    </div>
-
-    <div class="resumen-card card-total" onclick="filtrarPorEstado('')">
+    <div class="resumen-card card-total" onclick="filtrarEstado('')">
       <h3>Total Ventas</h3>
       <p>${data.length}</p>
     </div>
@@ -250,10 +244,8 @@ function renderTabla(data) {
   }
 
   data.forEach(v => {
-    const estado = normalizarEstado(v.estado_venta);
-
     tabla.innerHTML += `
-      <tr class="estado-${estado}">
+      <tr data-estado="${v.estado_venta}">
         <td>${v.cedula_asesor}</td>
         <td>${v.nombre_asesor}</td>
         <td>${v.rut}</td>
@@ -268,16 +260,13 @@ function renderTabla(data) {
   });
 }
 
-function filtrarPorEstado(estado) {
+function filtrarEstado(estado) {
   if (!estado) {
     renderTabla(ventasGlobal);
     return;
   }
 
-  const filtradas = ventasGlobal.filter(v =>
-    normalizarEstado(v.estado_venta) === estado
-  );
-
+  const filtradas = ventasGlobal.filter(v => v.estado_venta === estado);
   renderTabla(filtradas);
 }
 </script>
