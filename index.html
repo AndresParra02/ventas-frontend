@@ -154,7 +154,7 @@ async function consultarVentas() {
   }
 
   try {
-    const res = await fetch(`https://ventas-backend-loic.onrender.com/ventas/${cedula}`);
+    const res = await fetch(`https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`);
     if (!res.ok) throw new Error("Error en la consulta");
 
     const data = await res.json();
