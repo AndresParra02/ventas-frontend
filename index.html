@@ -59,36 +59,27 @@
       background-color: #2980b9;
     }
 
-    /* RESUMEN */
     .resumen {
-      margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
-      gap: 15px;
-      justify-content: flex-start;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 20px;
     }
 
     .resumen-card {
+      background-color: #3498db;
+      color: white;
       padding: 15px 20px;
       border-radius: 10px;
-      min-width: 150px;
+      min-width: 160px;
       text-align: center;
-      color: white;
-      font-weight: bold;
-      flex: 1 1 150px;
-      cursor: pointer;
-      transition: transform 0.2s;
     }
 
-    .resumen-card:hover {
-      transform: scale(1.05);
-    }
-
-    /* TABLA */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
       min-width: 1100px;
     }
 
@@ -118,14 +109,12 @@
       .input-group {
         flex-direction: column;
       }
-      .resumen {
-        justify-content: center;
-      }
     }
   </style>
 </head>
 
 <body>
+
 <div class="container">
   <h2>Consulta de Ventas Móvil</h2>
 
@@ -157,9 +146,6 @@
 </div>
 
 <script>
-let ventasData = []; // Guardaremos todas las ventas cargadas
-let estadoActivo = null; // Estado filtrado actualmente
-
 async function consultarVentas() {
   const cedula_asesor = document.getElementById("cedula_asesor").value.trim();
   if (!cedula_asesor) {
@@ -169,95 +155,78 @@ async function consultarVentas() {
 
   try {
     const url = `https://ventas-backend-loic.onrender.com/ventas_movil/${cedula_asesor}`;
+    console.log("Consultando URL:", url);
+
     const res = await fetch(url);
+    console.log("Status HTTP:", res.status);
+
     if (!res.ok) throw new Error("Respuesta no OK");
 
     const data = await res.json();
-    ventasData = data; // Guardar para filtros
-    estadoActivo = null; // Reset filtro
-    renderResumen();
-    renderTabla(ventasData);
+    console.log("Data recibida:", data);
+
+    const tabla = document.getElementById("tablaVentas");
+    const resumenDiv = document.getElementById("resumenVentas");
+
+    tabla.innerHTML = "";
+    resumenDiv.innerHTML = "";
+
+    if (data.length === 0) {
+      tabla.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align:center;">
+            No se encontraron ventas
+          </td>
+        </tr>`;
+      return;
+    }
+
+    // Resumen por estado de venta
+    const resumen = {};
+    data.forEach(v => {
+      resumen[v.estado_venta] = (resumen[v.estado_venta] || 0) + 1;
+    });
+
+    Object.entries(resumen).forEach(([estado, cantidad]) => {
+      resumenDiv.innerHTML += `
+        <div class="resumen-card">
+          <h3>${estado}</h3>
+          <p>${cantidad}</p>
+        </div>
+      `;
+    });
+
+    // Total de ventas
+    resumenDiv.innerHTML += `
+      <div class="resumen-card" style="background:#2ecc71">
+        <h3>Total Ventas</h3>
+        <p>${data.length}</p>
+      </div>
+    `;
+
+    // Construir filas de la tabla
+    let filas = "";
+    data.forEach(v => {
+      filas += `
+        <tr>
+          <td>${v.cedula_asesor}</td>
+          <td>${v.nombre_asesor}</td>
+          <td>${v.rut}</td>
+          <td>${v.nombre_cliente}</td>
+          <td>${v.estado_venta}</td>
+          <td>${v.fecha_venta || '-'}</td>
+          <td>${v.fecha_activacion || '-'}</td>
+          <td>${v.tel_contacto}</td>
+          <td>${v.tipo_venta}</td>
+        </tr>
+      `;
+    });
+    tabla.innerHTML = filas;
 
   } catch (error) {
     console.error("ERROR FRONTEND:", error);
     alert("Error al consultar ventas");
   }
-}
-
-// Renderiza la tabla (puede recibir un array filtrado)
-function renderTabla(data) {
-  const tabla = document.getElementById("tablaVentas");
-  tabla.innerHTML = "";
-
-  if (data.length === 0) {
-    tabla.innerHTML = `
-      <tr>
-        <td colspan="9" style="text-align:center;">
-          No se encontraron ventas
-        </td>
-      </tr>`;
-    return;
-  }
-
-  let filas = "";
-  data.forEach(v => {
-    const fechaVenta = v.fecha_venta ? new Date(v.fecha_venta).toLocaleDateString('es-ES') : '-';
-    const fechaActivacion = v.fecha_activacion ? new Date(v.fecha_activacion).toLocaleDateString('es-ES') : '-';
-
-    filas += `
-      <tr>
-        <td>${v.cedula_asesor}</td>
-        <td>${v.nombre_asesor}</td>
-        <td>${v.rut}</td>
-        <td>${v.nombre_cliente}</td>
-        <td>${v.estado_venta}</td>
-        <td>${fechaVenta}</td>
-        <td>${fechaActivacion}</td>
-        <td>${v.tel_contacto}</td>
-        <td>${v.tipo_venta}</td>
-      </tr>
-    `;
-  });
-  tabla.innerHTML = filas;
-}
-
-// Renderiza el resumen con filtros clicables
-function renderResumen() {
-  const resumenDiv = document.getElementById("resumenVentas");
-  resumenDiv.innerHTML = "";
-
-  const resumen = {};
-  ventasData.forEach(v => {
-    resumen[v.estado_venta] = (resumen[v.estado_venta] || 0) + 1;
-  });
-
-  const colores = ['#3498db','#e67e22','#e74c3c','#9b59b6','#1abc9c'];
-  let colorIndex = 0;
-
-  Object.entries(resumen).forEach(([estado, cantidad]) => {
-    const card = document.createElement("div");
-    card.className = "resumen-card";
-    card.style.backgroundColor = colores[colorIndex % colores.length];
-    card.innerHTML = `<h3>${estado}</h3><p>${cantidad}</p>`;
-    card.onclick = () => {
-      estadoActivo = estadoActivo === estado ? null : estado; // toggle filtro
-      const filtrado = estadoActivo ? ventasData.filter(v => v.estado_venta === estadoActivo) : ventasData;
-      renderTabla(filtrado);
-    };
-    resumenDiv.appendChild(card);
-    colorIndex++;
-  });
-
-  // Total de ventas siempre al final
-  const totalCard = document.createElement("div");
-  totalCard.className = "resumen-card";
-  totalCard.style.backgroundColor = "#2ecc71";
-  totalCard.innerHTML = `<h3>Total Ventas</h3><p>${ventasData.length}</p>`;
-  totalCard.onclick = () => {
-    estadoActivo = null;
-    renderTabla(ventasData);
-  };
-  resumenDiv.appendChild(totalCard);
 }
 </script>
 
