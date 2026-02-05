@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mis Ventas</title>
+
   <style>
     body {
       background: #f5f7fa;
@@ -19,7 +20,8 @@
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       width: 100%;
-      max-width: 900px;
+      max-width: 1200px;
+      overflow-x: auto;
     }
 
     h2 {
@@ -41,13 +43,6 @@
       border: 1px solid #ccc;
       flex: 1;
       font-size: 16px;
-      transition: all 0.3s;
-    }
-
-    input[type="text"]:focus {
-      border-color: #3498db;
-      outline: none;
-      box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
     }
 
     button {
@@ -58,7 +53,6 @@
       font-size: 16px;
       border-radius: 6px;
       cursor: pointer;
-      transition: background 0.3s;
     }
 
     button:hover {
@@ -69,18 +63,21 @@
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      min-width: 1100px;
     }
 
     th, td {
       text-align: left;
-      padding: 12px 15px;
+      padding: 10px 12px;
       border-bottom: 1px solid #ddd;
+      font-size: 14px;
     }
 
     th {
       background-color: #3498db;
       color: white;
-      border-radius: 6px;
+      position: sticky;
+      top: 0;
     }
 
     tr:nth-child(even) {
@@ -104,67 +101,57 @@
       color: white;
       padding: 15px 20px;
       border-radius: 10px;
-      min-width: 150px;
+      min-width: 160px;
       text-align: center;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    .resumen-card h3 {
-      margin-bottom: 10px;
-      font-size: 16px;
-    }
-
-    .resumen-card p {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
       .input-group {
         flex-direction: column;
-      }
-
-      input[type="text"], button {
-        width: 100%;
-      }
-
-      .resumen-card {
-        min-width: 100%;
       }
     }
   </style>
 </head>
+
 <body>
 
 <div class="container">
-  <h2>Consulta de Ventas</h2>
+  <h2>Consulta de Ventas Móvil</h2>
 
   <div class="input-group">
-    <input type="text" id="cedula" placeholder="Ingrese su cédula">
+    <input type="text" id="cedula" placeholder="Ingrese cédula del asesor">
     <button onclick="consultarVentas()">Consultar</button>
   </div>
 
-  <!-- Tabla de ventas -->
+  <!-- TABLA -->
   <table>
     <thead>
       <tr>
-        <th>Cliente</th>
-        <th>Producto</th>
-        <th>Estado</th>
-        <th>Fecha</th>
+        <th>Cédula Asesor</th>
+        <th>Nombre Asesor</th>
+        <th>RUT</th>
+        <th>Nombre Cliente</th>
+        <th>Estado Venta</th>
+        <th>Fecha Venta</th>
+        <th>Fecha Activación</th>
+        <th>Tel. Contacto</th>
+        <th>Tipo Venta</th>
       </tr>
     </thead>
     <tbody id="tablaVentas"></tbody>
   </table>
 
-  <!-- Resumen -->
+  <!-- RESUMEN -->
   <div class="resumen" id="resumenVentas"></div>
 </div>
 
 <script>
 async function consultarVentas() {
   const cedula = document.getElementById("cedula").value.trim();
-  if (!cedula) return alert("Por favor ingrese una cédula");
+  if (!cedula) {
+    alert("Ingrese una cédula");
+    return;
+  }
 
   try {
     const res = await fetch(`https://ventas-backend-loic.onrender.com/ventas/${cedula}`);
@@ -178,53 +165,60 @@ async function consultarVentas() {
     resumenDiv.innerHTML = "";
 
     if (data.length === 0) {
-      tabla.innerHTML = `<tr><td colspan="4" style="text-align:center;">No se encontraron ventas</td></tr>`;
+      tabla.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align:center;">
+            No se encontraron ventas
+          </td>
+        </tr>`;
       return;
     }
 
-    // Llenar tabla
+    // Cargar tabla
     data.forEach(v => {
       tabla.innerHTML += `
         <tr>
-          <td>${v.cliente}</td>
-          <td>${v.producto}</td>
-          <td>${v.valor}</td>
-          <td>${new Date(v.fecha).toLocaleDateString()}</td>
+          <td>${v.cedula_asesor}</td>
+          <td>${v.nombre_asesor}</td>
+          <td>${v.rut}</td>
+          <td>${v.nombre_cliente}</td>
+          <td>${v.estado_venta}</td>
+          <td>${new Date(v.fecha_venta).toLocaleDateString()}</td>
+          <td>${v.fecha_activacion ? new Date(v.fecha_activacion).toLocaleDateString() : '-'}</td>
+          <td>${v.tel_contacto}</td>
+          <td>${v.tipo_venta}</td>
         </tr>
       `;
     });
 
-    // Generar resumen por producto y estado
+    // Resumen por estado
     const resumen = {};
-    let totalVentas = 0;
+    let total = 0;
 
     data.forEach(v => {
-      totalVentas++;
-      const key = `${v.producto} - ${v.valor}`;
-      resumen[key] = (resumen[key] || 0) + 1;
+      total++;
+      resumen[v.estado_venta] = (resumen[v.estado_venta] || 0) + 1;
     });
 
-    // Mostrar resumen
-    Object.keys(resumen).forEach(key => {
+    Object.keys(resumen).forEach(estado => {
       resumenDiv.innerHTML += `
         <div class="resumen-card">
-          <h3>${key}</h3>
-          <p>${resumen[key]}</p>
+          <h3>${estado}</h3>
+          <p>${resumen[estado]}</p>
         </div>
       `;
     });
 
-    // Total general
     resumenDiv.innerHTML += `
-      <div class="resumen-card" style="background-color:#2ecc71;">
+      <div class="resumen-card" style="background:#2ecc71">
         <h3>Total Ventas</h3>
-        <p>${totalVentas}</p>
+        <p>${total}</p>
       </div>
     `;
 
-  } catch (err) {
-    alert("Ocurrió un error al consultar las ventas");
-    console.error(err);
+  } catch (error) {
+    alert("Error al consultar ventas");
+    console.error(error);
   }
 }
 </script>
