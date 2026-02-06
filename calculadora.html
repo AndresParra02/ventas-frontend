@@ -45,10 +45,29 @@
 
   <div id="resultado"></div>
 
-  <script>
+<!-- Gamificación -->
+<div style="margin-top:20px">
+
+  <div id="mensajePiso"></div>
+
+  <label><strong>Progreso al siguiente piso</strong></label>
+  <div style="background:#ddd; height:20px; border-radius:10px;">
+    <div id="barraPiso" style="height:100%; width:0%; background:#4caf50; border-radius:10px;"></div>
+  </div>
+
+  <br>
+
+  <label><strong>Progreso POS (objetivo 80%)</strong></label>
+  <div style="background:#ddd; height:20px; border-radius:10px;">
+    <div id="barraPos" style="height:100%; width:0%; background:#f44336; border-radius:10px;"></div>
+  </div>
+
+</div>
+
+  
+<script>
 function calcular() {
 
-  // 🔧 CONFIGURACIÓN DE PUNTOS POR TIPO DE VENTA
   const puntosPorTipo = {
     pos: 1000,
     migracion: 1000,
@@ -66,13 +85,11 @@ function calcular() {
   const totalVentas =
     ventas.pos + ventas.migracion + ventas.pre + ventas.linea;
 
-  // 🧮 Cálculo de puntos
   let puntosTotales = 0;
   for (let tipo in ventas) {
     puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
   }
 
-  // 🏢 Pisos por puntos
   const pisos = [
     { puntos: 29000, comision: 500000 },
     { puntos: 32000, comision: 700000 },
@@ -86,38 +103,71 @@ function calcular() {
 
   let pisoNumero = 0;
   let comisionBase = 0;
+  let puntosPisoActual = 0;
+  let puntosProximoPiso = null;
+  let comisionProxima = null;
 
   pisos.forEach((piso, index) => {
     if (puntosTotales >= piso.puntos) {
       pisoNumero = index + 1;
       comisionBase = piso.comision;
+      puntosPisoActual = piso.puntos;
+      if (pisos[index + 1]) {
+        puntosProximoPiso = pisos[index + 1].puntos;
+        comisionProxima = pisos[index + 1].comision;
+      }
     }
   });
 
-  // 💰 CONFIGURACIÓN BONO POS (NEGOCIO)
-  const bonoPosPorPiso = {
-    4: 4000,
-    5: 5000,
-    6: 6000,
-    7: 7000,
-    8: 8000
-  };
+  // 📊 Barra progreso piso
+  if (puntosProximoPiso) {
+    const progreso = Math.min(
+      ((puntosTotales - puntosPisoActual) /
+      (puntosProximoPiso - puntosPisoActual)) * 100,
+      100
+    );
 
+    document.getElementById("barraPiso").style.width = progreso + "%";
+
+    const puntosFaltantes = puntosProximoPiso - puntosTotales;
+    const gananciaExtra = comisionProxima - comisionBase;
+
+    document.getElementById("mensajePiso").innerHTML = `
+      <br><strong>🚀 Próximo objetivo: Piso ${pisoNumero + 1}</strong><br>
+      Te faltan <strong>${puntosFaltantes}</strong> puntos<br>
+      Ganas <strong>$${gananciaExtra.toLocaleString()}</strong> más
+    `;
+  } else {
+    document.getElementById("barraPiso").style.width = "100%";
+    document.getElementById("mensajePiso").innerHTML =
+      "<br><strong>🏆 Estás en el piso máximo</strong>";
+  }
+
+  // 💰 Bono POS
+  const bonoPosPorPiso = { 4:4000, 5:5000, 6:6000, 7:7000, 8:8000 };
   let bonoPos = 0;
   let mensajeBono = "";
 
-  if (pisoNumero >= 4 && totalVentas > 0) {
-    const porcentajePos = ventas.pos / totalVentas;
+  let porcentajePos = totalVentas > 0 ? ventas.pos / totalVentas : 0;
+  let porcentajePosUI = Math.min(porcentajePos * 100, 100);
 
-    if (porcentajePos >= 0.8 && bonoPosPorPiso[pisoNumero]) {
-      const valorPos = bonoPosPorPiso[pisoNumero];
-      bonoPos = ventas.pos * valorPos;
+  document.getElementById("barraPos").style.width = porcentajePosUI + "%";
+  document.getElementById("barraPos").style.background =
+    porcentajePos >= 0.8 ? "#4caf50" : "#f44336";
 
+  if (pisoNumero >= 4 && bonoPosPorPiso[pisoNumero]) {
+    if (porcentajePos >= 0.8) {
+      bonoPos = ventas.pos * bonoPosPorPiso[pisoNumero];
       mensajeBono = `
-        <br><strong>Bono POS aplicado</strong><br>
-        POS: ${ventas.pos} (${(porcentajePos * 100).toFixed(0)}%)<br>
-        Valor por POS: $${valorPos.toLocaleString()}<br>
-        <strong>Bono:</strong> $${bonoPos.toLocaleString()}
+        <br><strong>🔥 Bono POS ACTIVADO</strong><br>
+        Bono: $${bonoPos.toLocaleString()}
+      `;
+    } else {
+      const posFaltantes = Math.ceil(
+        (0.8 * totalVentas - ventas.pos) / 0.2
+      );
+      mensajeBono = `
+        <br><strong>⚡ Te faltan ${posFaltantes} POS</strong> para activar el bono
       `;
     }
   }
@@ -125,16 +175,16 @@ function calcular() {
   const totalPagar = comisionBase + bonoPos;
 
   document.getElementById("resultado").innerHTML = `
-    <strong>Puntos totales:</strong> ${puntosTotales}<br>
-    <strong>Piso alcanzado:</strong> ${pisoNumero || "No alcanzó meta"}<br>
+    <strong>Puntos:</strong> ${puntosTotales}<br>
+    <strong>Piso:</strong> ${pisoNumero || "No alcanzó meta"}<br>
     <strong>Comisión base:</strong> $${comisionBase.toLocaleString()}
     ${mensajeBono}
     <br><br>
-    <strong>Total a pagar:</strong>
-    $${totalPagar.toLocaleString()}
+    <strong>💰 Total a pagar:</strong> $${totalPagar.toLocaleString()}
   `;
 }
 </script>
+
 
 </body>
 </html>
