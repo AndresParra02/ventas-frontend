@@ -1,188 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Calculadora de Comisiones Móvil</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 500px;
-      margin: 40px auto;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-    }
-    input, button {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-    }
-    #resultado {
-      margin-top: 20px;
-      padding: 10px;
-      background: #f3f3f3;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Calculadora de Comisiones Gamificada</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f0f2f5; text-align:center; }
+  h1 { color:#333; }
+  
+  /* Entradas de ventas */
+  input[type=number] { width:60px; margin:5px; }
+
+  /* Avatar */
+  #avatar {
+    width:150px; height:150px;
+    margin:20px auto;
+    background-size:cover;
+    transition: transform 0.5s;
+  }
+
+  /* Animación al subir piso */
+  .subio { transform: scale(1.2); }
+
+  /* Barra de progreso gamificada */
+  #barraJuego {
+    width:80%; height:30px; background:#ddd; margin:20px auto; border-radius:15px; overflow:hidden;
+  }
+  #progresoJuego {
+    height:100%; width:0%; background:linear-gradient(90deg,#4caf50,#00bcd4);
+    text-align:right; padding-right:5px; color:white; font-weight:bold;
+    border-radius:15px;
+    transition: width 0.5s;
+  }
+
+  /* Medallas */
+  #medallas img { width:50px; margin:5px; vertical-align:middle; }
+
+  /* Mensaje celebración */
+  #mensajeCelebracion { font-size:18px; color:#e91e63; margin-top:10px; }
+</style>
 </head>
 <body>
 
-  <h2>Calculadora de Comisiones Móvil</h2>
+<h1>Calculadora de Comisiones Gamificada</h1>
 
-  <label>Portabilidad</label>
-  <input type="number" id="pos" value="0" min="0">
-
-  <label>Migración</label>
-  <input type="number" id="migracion" value="0" min="0">
-
-  <label>Pre</label>
-  <input type="number" id="pre" value="0" min="0">
-
-  <label>Línea Nueva</label>
-  <input type="number" id="linea" value="0" min="0">
-
-  <button onclick="calcular()">Calcular comisión</button>
-
-  <div id="resultado"></div>
-
-<!-- Gamificación -->
-<div style="margin-top:20px">
-
-  <div id="mensajePiso"></div>
-
-  <label><strong>Progreso al siguiente piso</strong></label>
-  <div style="background:#ddd; height:20px; border-radius:10px;">
-    <div id="barraPiso" style="height:100%; width:0%; background:#4caf50; border-radius:10px;"></div>
-  </div>
-
-  <br>
-
-  <label><strong>Progreso POS (objetivo 90%)</strong></label>
-  <div style="background:#ddd; height:20px; border-radius:10px;">
-    <div id="barraPos" style="height:100%; width:0%; background:#f44336; border-radius:10px;"></div>
-  </div>
-
+<div>
+  <label>PORTA (POS a POS):</label>
+  <input type="number" id="pos" value="0"><br>
+  <label>Migración:</label>
+  <input type="number" id="migracion" value="0"><br>
+  <label>Pre:</label>
+  <input type="number" id="pre" value="0"><br>
+  <label>Línea Nueva:</label>
+  <input type="number" id="linea" value="0"><br>
+  <button onclick="calcular()">Calcular</button>
 </div>
 
-  
+<!-- Avatar -->
+<div id="avatar" style="background-image:url('avatar1.png');"></div>
+
+<!-- Barra de progreso gamificada -->
+<div id="barraJuego"><div id="progresoJuego">0%</div></div>
+
+<!-- Medallas -->
+<div id="medallas"></div>
+
+<!-- Mensaje celebración -->
+<div id="mensajeCelebracion"></div>
+
 <script>
 function calcular() {
 
   // 🔧 Puntos por tipo de venta
-  const puntosPorTipo = {
-    pos: 7100,        // POS a POS = PORTA
-    migracion: 4100,
-    pre: 4100,
-    linea: 2500
-  };
-
+  const puntosPorTipo = { pos: 1000, migracion: 1000, pre: 1000, linea: 1000 };
   const ventas = {
-    pos: Number(document.getElementById("pos").value), // PORTA
+    pos: Number(document.getElementById("pos").value),
     migracion: Number(document.getElementById("migracion").value),
     pre: Number(document.getElementById("pre").value),
     linea: Number(document.getElementById("linea").value)
   };
 
-  const totalVentas =
-    ventas.pos + ventas.migracion + ventas.pre + ventas.linea;
-
-  // 🧮 Puntos totales
+  // Puntos totales
   let puntosTotales = 0;
-  for (let tipo in ventas) {
-    puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
-  }
+  for (let tipo in ventas) puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
 
-  // 🏢 Pisos reales
+  // Pisos
   const pisos = [
-    { piso:1, puntos:182004, comision:450000 },
-    { piso:2, puntos:188280, comision:600000 },
-    { piso:3, puntos:207108, comision:995535, bonoPorta:3000 },
-    { piso:4, puntos:238488, comision:1183535, bonoPorta:6000 },
-    { piso:5, puntos:263592, comision:1348035, bonoPorta:8500 },
-    { piso:6, puntos:294972, comision:1512535, bonoPorta:10000 },
-    { piso:7, puntos:320076, comision:1677035, bonoPorta:11500 },
-    { piso:8, puntos:351456, comision:1818035, bonoPorta:12000 }
+    { piso:1, puntos:182004, comision:450000, avatar:'avatar1.png' },
+    { piso:2, puntos:188280, comision:600000, avatar:'avatar2.png' },
+    { piso:3, puntos:207108, comision:995535, bonoPorta:3000, avatar:'avatar3.png' },
+    { piso:4, puntos:238488, comision:1183535, bonoPorta:6000, avatar:'avatar4.png' },
+    { piso:5, puntos:263592, comision:1348035, bonoPorta:8500, avatar:'avatar5.png' },
+    { piso:6, puntos:294972, comision:1512535, bonoPorta:10000, avatar:'avatar6.png' },
+    { piso:7, puntos:320076, comision:1677035, bonoPorta:11500, avatar:'avatar7.png' },
+    { piso:8, puntos:351456, comision:1818035, bonoPorta:12000, avatar:'avatar8.png' }
   ];
 
-  let pisoActual = null;
+  let pisoActual = pisos[0];
   let pisoSiguiente = null;
 
-  pisos.forEach((piso, i) => {
-    if (puntosTotales >= piso.puntos) {
-      pisoActual = piso;
-      pisoSiguiente = pisos[i + 1] || null;
-    }
-  });
-
-  // 📊 Progreso al siguiente piso
-  if (pisoActual && pisoSiguiente) {
-    const progreso = Math.min(
-      ((puntosTotales - pisoActual.puntos) /
-      (pisoSiguiente.puntos - pisoActual.puntos)) * 100,
-      100
-    );
-
-    document.getElementById("barraPiso").style.width = progreso + "%";
-
-    document.getElementById("mensajePiso").innerHTML = `
-      <br><strong>🚀 Próximo piso: ${pisoSiguiente.piso}</strong><br>
-      Te faltan <strong>${pisoSiguiente.puntos - puntosTotales}</strong> puntos<br>
-      Ganas <strong>$${(pisoSiguiente.comision - pisoActual.comision).toLocaleString()}</strong> más
-    `;
-  } else if (pisoActual) {
-    document.getElementById("barraPiso").style.width = "100%";
-    document.getElementById("mensajePiso").innerHTML =
-      "<br><strong>🏆 Estás en el piso máximo</strong>";
-  }
-
-  // 💰 Bono PORTA (POS a POS ≥ 90%)
-  let bonoPorta = 0;
-  let mensajeBono = "";
-
-  const porcentajePorta = totalVentas > 0 ? ventas.pos / totalVentas : 0;
-
-  document.getElementById("barraPos").style.width =
-    Math.min(porcentajePorta * 100, 100) + "%";
-
-  document.getElementById("barraPos").style.background =
-    porcentajePorta >= 0.9 ? "#4caf50" : "#f44336";
-
-  if (pisoActual && pisoActual.bonoPorta) {
-    if (porcentajePorta >= 0.9) {
-      bonoPorta = ventas.pos * pisoActual.bonoPorta;
-      mensajeBono = `
-        <br><strong>🔥 Bono PORTA ACTIVADO</strong><br>
-        PORTA: ${ventas.pos}<br>
-        Valor por PORTA: $${pisoActual.bonoPorta.toLocaleString()}<br>
-        <strong>Bono:</strong> $${bonoPorta.toLocaleString()}
-      `;
-    } else {
-      const faltantes = Math.ceil(
-        (0.9 * totalVentas - ventas.pos) / 0.1
-      );
-      mensajeBono = `
-        <br><strong>⚡ Te faltan ${faltantes} PORTA</strong>
-        para activar el bono (90%)
-      `;
+  for (let i=0; i<pisos.length; i++) {
+    if (puntosTotales >= pisos[i].puntos) {
+      pisoActual = pisos[i];
+      pisoSiguiente = pisos[i+1] || null;
     }
   }
 
-  const totalPagar =
-    (pisoActual ? pisoActual.comision : 0) + bonoPorta;
+  // Actualizar avatar
+  const avatarDiv = document.getElementById("avatar");
+  avatarDiv.style.backgroundImage = `url('${pisoActual.avatar}')`;
+  avatarDiv.classList.add('subio');
+  setTimeout(()=>avatarDiv.classList.remove('subio'),500);
 
-  document.getElementById("resultado").innerHTML = `
-    <strong>Puntos:</strong> ${puntosTotales}<br>
-    <strong>Piso:</strong> ${pisoActual ? pisoActual.piso : "Sin piso"}<br>
-    <strong>Comisión base:</strong>
-    $${pisoActual ? pisoActual.comision.toLocaleString() : 0}
-    ${mensajeBono}
-    <br><br>
-    <strong>💰 Total a pagar:</strong>
-    $${totalPagar.toLocaleString()}
-  `;
+  // Barra de progreso
+  let progreso = 0;
+  if (pisoSiguiente) {
+    progreso = Math.min(((puntosTotales - pisoActual.puntos)/(pisoSiguiente.puntos - pisoActual.puntos))*100,100);
+  } else progreso = 100;
+
+  const barra = document.getElementById("progresoJuego");
+  barra.style.width = progreso+'%';
+  barra.textContent = Math.round(progreso)+'%';
+
+  // Medallas
+  const medallasDiv = document.getElementById("medallas");
+  medallasDiv.innerHTML = '';
+  for(let i=1;i<=pisoActual.piso;i++){
+    medallasDiv.innerHTML += `<img src="medalla.png" alt="Medalla piso ${i}">`;
+  }
+
+  // Mensaje celebración
+  const mensaje = document.getElementById("mensajeCelebracion");
+  if(progreso===100 && pisoSiguiente===null){
+    mensaje.textContent = '🏆 ¡Felicidades! Has alcanzado el piso máximo!';
+  } else if(pisoActual.piso>1){
+    mensaje.textContent = `🎉 Subiste al piso ${pisoActual.piso}!`;
+  } else {
+    mensaje.textContent = '';
+  }
 }
 </script>
-
 
 </body>
 </html>
