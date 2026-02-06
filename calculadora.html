@@ -29,7 +29,7 @@
 
   <h2>Calculadora de Comisiones</h2>
 
-  <label>POS a POS</label>
+  <label>Portabilidad</label>
   <input type="number" id="pos" value="0" min="0">
 
   <label>Migración</label>
@@ -57,22 +57,23 @@
 
   <br>
 
-  <label><strong>Progreso POS (objetivo 80%)</strong></label>
+  <label><strong>Progreso POS (objetivo 90%)</strong></label>
   <div style="background:#ddd; height:20px; border-radius:10px;">
     <div id="barraPos" style="height:100%; width:0%; background:#f44336; border-radius:10px;"></div>
   </div>
 
 </div>
 
-  <script>
+  
+<script>
 function calcular() {
 
   // 🔧 Puntos por tipo de venta
   const puntosPorTipo = {
-    pos: 1000,        // POS a POS = PORTA
-    migracion: 1000,
-    pre: 1000,
-    linea: 1000
+    pos: 7100,        // POS a POS = PORTA
+    migracion: 4100,
+    pre: 4100,
+    linea: 2500
   };
 
   const ventas = {
@@ -181,8 +182,6 @@ function calcular() {
   `;
 }
 </script>
-
-
 
 
 </body>
