@@ -64,19 +64,19 @@
 
 </div>
 
-  
-<script>
+  <script>
 function calcular() {
 
+  // 🔧 Puntos por tipo de venta
   const puntosPorTipo = {
-    pos: 1000,
+    pos: 1000,        // POS a POS = PORTA
     migracion: 1000,
     pre: 1000,
     linea: 1000
   };
 
   const ventas = {
-    pos: Number(document.getElementById("pos").value),
+    pos: Number(document.getElementById("pos").value), // PORTA
     migracion: Number(document.getElementById("migracion").value),
     pre: Number(document.getElementById("pre").value),
     linea: Number(document.getElementById("linea").value)
@@ -85,105 +85,104 @@ function calcular() {
   const totalVentas =
     ventas.pos + ventas.migracion + ventas.pre + ventas.linea;
 
+  // 🧮 Puntos totales
   let puntosTotales = 0;
   for (let tipo in ventas) {
     puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
   }
 
+  // 🏢 Pisos reales
   const pisos = [
-    { puntos: 29000, comision: 500000 },
-    { puntos: 32000, comision: 700000 },
-    { puntos: 35000, comision: 900000 },
-    { puntos: 38000, comision: 1100000 },
-    { puntos: 41000, comision: 1300000 },
-    { puntos: 44000, comision: 1500000 },
-    { puntos: 47000, comision: 1700000 },
-    { puntos: 50000, comision: 2000000 }
+    { piso:1, puntos:182004, comision:450000 },
+    { piso:2, puntos:188280, comision:600000 },
+    { piso:3, puntos:207108, comision:995535, bonoPorta:3000 },
+    { piso:4, puntos:238488, comision:1183535, bonoPorta:6000 },
+    { piso:5, puntos:263592, comision:1348035, bonoPorta:8500 },
+    { piso:6, puntos:294972, comision:1512535, bonoPorta:10000 },
+    { piso:7, puntos:320076, comision:1677035, bonoPorta:11500 },
+    { piso:8, puntos:351456, comision:1818035, bonoPorta:12000 }
   ];
 
-  let pisoNumero = 0;
-  let comisionBase = 0;
-  let puntosPisoActual = 0;
-  let puntosProximoPiso = null;
-  let comisionProxima = null;
+  let pisoActual = null;
+  let pisoSiguiente = null;
 
-  pisos.forEach((piso, index) => {
+  pisos.forEach((piso, i) => {
     if (puntosTotales >= piso.puntos) {
-      pisoNumero = index + 1;
-      comisionBase = piso.comision;
-      puntosPisoActual = piso.puntos;
-      if (pisos[index + 1]) {
-        puntosProximoPiso = pisos[index + 1].puntos;
-        comisionProxima = pisos[index + 1].comision;
-      }
+      pisoActual = piso;
+      pisoSiguiente = pisos[i + 1] || null;
     }
   });
 
-  // 📊 Barra progreso piso
-  if (puntosProximoPiso) {
+  // 📊 Progreso al siguiente piso
+  if (pisoActual && pisoSiguiente) {
     const progreso = Math.min(
-      ((puntosTotales - puntosPisoActual) /
-      (puntosProximoPiso - puntosPisoActual)) * 100,
+      ((puntosTotales - pisoActual.puntos) /
+      (pisoSiguiente.puntos - pisoActual.puntos)) * 100,
       100
     );
 
     document.getElementById("barraPiso").style.width = progreso + "%";
 
-    const puntosFaltantes = puntosProximoPiso - puntosTotales;
-    const gananciaExtra = comisionProxima - comisionBase;
-
     document.getElementById("mensajePiso").innerHTML = `
-      <br><strong>🚀 Próximo objetivo: Piso ${pisoNumero + 1}</strong><br>
-      Te faltan <strong>${puntosFaltantes}</strong> puntos<br>
-      Ganas <strong>$${gananciaExtra.toLocaleString()}</strong> más
+      <br><strong>🚀 Próximo piso: ${pisoSiguiente.piso}</strong><br>
+      Te faltan <strong>${pisoSiguiente.puntos - puntosTotales}</strong> puntos<br>
+      Ganas <strong>$${(pisoSiguiente.comision - pisoActual.comision).toLocaleString()}</strong> más
     `;
-  } else {
+  } else if (pisoActual) {
     document.getElementById("barraPiso").style.width = "100%";
     document.getElementById("mensajePiso").innerHTML =
       "<br><strong>🏆 Estás en el piso máximo</strong>";
   }
 
-  // 💰 Bono POS
-  const bonoPosPorPiso = { 4:4000, 5:5000, 6:6000, 7:7000, 8:8000 };
-  let bonoPos = 0;
+  // 💰 Bono PORTA (POS a POS ≥ 90%)
+  let bonoPorta = 0;
   let mensajeBono = "";
 
-  let porcentajePos = totalVentas > 0 ? ventas.pos / totalVentas : 0;
-  let porcentajePosUI = Math.min(porcentajePos * 100, 100);
+  const porcentajePorta = totalVentas > 0 ? ventas.pos / totalVentas : 0;
 
-  document.getElementById("barraPos").style.width = porcentajePosUI + "%";
+  document.getElementById("barraPos").style.width =
+    Math.min(porcentajePorta * 100, 100) + "%";
+
   document.getElementById("barraPos").style.background =
-    porcentajePos >= 0.8 ? "#4caf50" : "#f44336";
+    porcentajePorta >= 0.9 ? "#4caf50" : "#f44336";
 
-  if (pisoNumero >= 4 && bonoPosPorPiso[pisoNumero]) {
-    if (porcentajePos >= 0.8) {
-      bonoPos = ventas.pos * bonoPosPorPiso[pisoNumero];
+  if (pisoActual && pisoActual.bonoPorta) {
+    if (porcentajePorta >= 0.9) {
+      bonoPorta = ventas.pos * pisoActual.bonoPorta;
       mensajeBono = `
-        <br><strong>🔥 Bono POS ACTIVADO</strong><br>
-        Bono: $${bonoPos.toLocaleString()}
+        <br><strong>🔥 Bono PORTA ACTIVADO</strong><br>
+        PORTA: ${ventas.pos}<br>
+        Valor por PORTA: $${pisoActual.bonoPorta.toLocaleString()}<br>
+        <strong>Bono:</strong> $${bonoPorta.toLocaleString()}
       `;
     } else {
-      const posFaltantes = Math.ceil(
-        (0.8 * totalVentas - ventas.pos) / 0.2
+      const faltantes = Math.ceil(
+        (0.9 * totalVentas - ventas.pos) / 0.1
       );
       mensajeBono = `
-        <br><strong>⚡ Te faltan ${posFaltantes} POS</strong> para activar el bono
+        <br><strong>⚡ Te faltan ${faltantes} PORTA</strong>
+        para activar el bono (90%)
       `;
     }
   }
 
-  const totalPagar = comisionBase + bonoPos;
+  const totalPagar =
+    (pisoActual ? pisoActual.comision : 0) + bonoPorta;
 
   document.getElementById("resultado").innerHTML = `
     <strong>Puntos:</strong> ${puntosTotales}<br>
-    <strong>Piso:</strong> ${pisoNumero || "No alcanzó meta"}<br>
-    <strong>Comisión base:</strong> $${comisionBase.toLocaleString()}
+    <strong>Piso:</strong> ${pisoActual ? pisoActual.piso : "Sin piso"}<br>
+    <strong>Comisión base:</strong>
+    $${pisoActual ? pisoActual.comision.toLocaleString() : 0}
     ${mensajeBono}
     <br><br>
-    <strong>💰 Total a pagar:</strong> $${totalPagar.toLocaleString()}
+    <strong>💰 Total a pagar:</strong>
+    $${totalPagar.toLocaleString()}
   `;
 }
 </script>
+
+
 
 
 </body>
