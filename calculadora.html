@@ -3,27 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <title>Calculadora de Comisiones</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+    #resultado {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f3f3f3;
+    }
+  </style>
 </head>
 <body>
 
   <h2>Calculadora de Comisiones</h2>
 
-  <label>POS a POS:</label>
-  <input type="number" id="pos" value="0"><br><br>
+  <label>POS a POS</label>
+  <input type="number" id="pos" value="0" min="0">
 
-  <label>Migración:</label>
-  <input type="number" id="migracion" value="0"><br><br>
+  <label>Migración</label>
+  <input type="number" id="migracion" value="0" min="0">
 
-  <label>Pre:</label>
-  <input type="number" id="pre" value="0"><br><br>
+  <label>Pre</label>
+  <input type="number" id="pre" value="0" min="0">
 
-  <label>Línea Nueva:</label>
-  <input type="number" id="linea" value="0"><br><br>
+  <label>Línea Nueva</label>
+  <input type="number" id="linea" value="0" min="0">
 
   <button onclick="calcular()">Calcular comisión</button>
 
-  <h3 id="resultado"></h3>
+  <div id="resultado"></div>
 
-  <script src="calculadora.js"></script>
+  <script>
+    function calcular() {
+
+      // 🔧 Configuración editable de puntos
+      const puntosPorTipo = {
+        pos: 1000,
+        migracion: 1000,
+        pre: 1000,
+        linea: 1000
+      };
+
+      const ventas = {
+        pos: Number(document.getElementById("pos").value),
+        migracion: Number(document.getElementById("migracion").value),
+        pre: Number(document.getElementById("pre").value),
+        linea: Number(document.getElementById("linea").value)
+      };
+
+      let puntosTotales = 0;
+      for (let tipo in ventas) {
+        puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
+      }
+
+      const pisos = [
+        { puntos: 29000, comision: 500000 },
+        { puntos: 32000, comision: 700000 },
+        { puntos: 35000, comision: 900000 },
+        { puntos: 38000, comision: 1100000 },
+        { puntos: 41000, comision: 1300000 },
+        { puntos: 44000, comision: 1500000 },
+        { puntos: 47000, comision: 1700000 },
+        { puntos: 50000, comision: 2000000 }
+      ];
+
+      let pisoAlcanzado = "No alcanzó meta";
+      let comision = 0;
+
+      pisos.forEach((piso, index) => {
+        if (puntosTotales >= piso.puntos) {
+          pisoAlcanzado = `Piso ${index + 1}`;
+          comision = piso.comision;
+        }
+      });
+
+      document.getElementById("resultado").innerHTML = `
+        <strong>Puntos totales:</strong> ${puntosTotales}<br>
+        <strong>Piso alcanzado:</strong> ${pisoAlcanzado}<br>
+        <strong>Comisión:</strong> $${comision.toLocaleString()}
+      `;
+    }
+  </script>
+
 </body>
 </html>
