@@ -46,56 +46,95 @@
   <div id="resultado"></div>
 
   <script>
-    function calcular() {
+function calcular() {
 
-      // 🔧 Configuración editable de puntos
-      const puntosPorTipo = {
-        pos: 1000,
-        migracion: 1000,
-        pre: 1000,
-        linea: 1000
-      };
+  // 🔧 CONFIGURACIÓN DE PUNTOS POR TIPO DE VENTA
+  const puntosPorTipo = {
+    pos: 1000,
+    migracion: 1000,
+    pre: 1000,
+    linea: 1000
+  };
 
-      const ventas = {
-        pos: Number(document.getElementById("pos").value),
-        migracion: Number(document.getElementById("migracion").value),
-        pre: Number(document.getElementById("pre").value),
-        linea: Number(document.getElementById("linea").value)
-      };
+  const ventas = {
+    pos: Number(document.getElementById("pos").value),
+    migracion: Number(document.getElementById("migracion").value),
+    pre: Number(document.getElementById("pre").value),
+    linea: Number(document.getElementById("linea").value)
+  };
 
-      let puntosTotales = 0;
-      for (let tipo in ventas) {
-        puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
-      }
+  const totalVentas =
+    ventas.pos + ventas.migracion + ventas.pre + ventas.linea;
 
-      const pisos = [
-        { puntos: 29000, comision: 500000 },
-        { puntos: 32000, comision: 700000 },
-        { puntos: 35000, comision: 900000 },
-        { puntos: 38000, comision: 1100000 },
-        { puntos: 41000, comision: 1300000 },
-        { puntos: 44000, comision: 1500000 },
-        { puntos: 47000, comision: 1700000 },
-        { puntos: 50000, comision: 2000000 }
-      ];
+  // 🧮 Cálculo de puntos
+  let puntosTotales = 0;
+  for (let tipo in ventas) {
+    puntosTotales += ventas[tipo] * puntosPorTipo[tipo];
+  }
 
-      let pisoAlcanzado = "No alcanzó meta";
-      let comision = 0;
+  // 🏢 Pisos por puntos
+  const pisos = [
+    { puntos: 29000, comision: 500000 },
+    { puntos: 32000, comision: 700000 },
+    { puntos: 35000, comision: 900000 },
+    { puntos: 38000, comision: 1100000 },
+    { puntos: 41000, comision: 1300000 },
+    { puntos: 44000, comision: 1500000 },
+    { puntos: 47000, comision: 1700000 },
+    { puntos: 50000, comision: 2000000 }
+  ];
 
-      pisos.forEach((piso, index) => {
-        if (puntosTotales >= piso.puntos) {
-          pisoAlcanzado = `Piso ${index + 1}`;
-          comision = piso.comision;
-        }
-      });
+  let pisoNumero = 0;
+  let comisionBase = 0;
 
-      document.getElementById("resultado").innerHTML = `
-        <strong>Puntos totales:</strong> ${puntosTotales}<br>
-        <strong>Piso alcanzado:</strong> ${pisoAlcanzado}<br>
-        <strong>Comisión:</strong> $${comision.toLocaleString()}
+  pisos.forEach((piso, index) => {
+    if (puntosTotales >= piso.puntos) {
+      pisoNumero = index + 1;
+      comisionBase = piso.comision;
+    }
+  });
+
+  // 💰 CONFIGURACIÓN BONO POS (NEGOCIO)
+  const bonoPosPorPiso = {
+    4: 4000,
+    5: 5000,
+    6: 6000,
+    7: 7000,
+    8: 8000
+  };
+
+  let bonoPos = 0;
+  let mensajeBono = "";
+
+  if (pisoNumero >= 4 && totalVentas > 0) {
+    const porcentajePos = ventas.pos / totalVentas;
+
+    if (porcentajePos >= 0.8 && bonoPosPorPiso[pisoNumero]) {
+      const valorPos = bonoPosPorPiso[pisoNumero];
+      bonoPos = ventas.pos * valorPos;
+
+      mensajeBono = `
+        <br><strong>Bono POS aplicado</strong><br>
+        POS: ${ventas.pos} (${(porcentajePos * 100).toFixed(0)}%)<br>
+        Valor por POS: $${valorPos.toLocaleString()}<br>
+        <strong>Bono:</strong> $${bonoPos.toLocaleString()}
       `;
     }
-  </script>
+  }
+
+  const totalPagar = comisionBase + bonoPos;
+
+  document.getElementById("resultado").innerHTML = `
+    <strong>Puntos totales:</strong> ${puntosTotales}<br>
+    <strong>Piso alcanzado:</strong> ${pisoNumero || "No alcanzó meta"}<br>
+    <strong>Comisión base:</strong> $${comisionBase.toLocaleString()}
+    ${mensajeBono}
+    <br><br>
+    <strong>Total a pagar:</strong>
+    $${totalPagar.toLocaleString()}
+  `;
+}
+</script>
 
 </body>
 </html>
